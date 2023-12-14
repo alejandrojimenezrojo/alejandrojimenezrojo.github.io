@@ -11,36 +11,32 @@ published: true
 
 ![switch](/assets/img/common/switch1.jpg)
 
-
-
 ## SITUACION
 
-Tenemos un servidor físico en el que hay configuradas una tarjeta o un bond (varias tarjetas)
-Desde comunicaciones nos indican que está todo bien configurado hasta el switch pero no tenemos conectividad en el servidor.
+Tenemos un servidor con dos interfaces creadas de tipo VLAN asignadas a un mismo bond (varias tarjetas de red configuradas como si fuesen una sola)
+*Este ejemplo aplica de la misma manera para una interfaz de red simple. Donde pone "bond0" aparecerá como "ethX" o "enoX".
+	VLAN ID 100
+ 	VLAN ID 200
 
+## OBJETIVO
 
-**Configuraciones posibles**
-
-- Puerto en el switch configurado como puerto de acceso. La mas habitual
-- Puerto en el swtich configurado con VLAN tagging. Por este puerto nos pueden venir el tráfico de una o más VLANs.
-- Puerto híbrido. Puerto de acceso + una o más VLANs tageadas.
+Confirmar que la VLAN está bien extendida hasta el servidor (con VLAN tagging)
 
 ## PRUEBAS
 
-Para esta prueba nos centraremos en el caso de que nos pasen el tráfico con VLAN tagging, ya que en el caso de ser un puerto de acceso sería únicamente lanzar un tcpdump indicando la interfaz.
+Vamos a ver las dos formas que hay para levantar el tcpdump y ver si hay tráfico.
 
-Consultamos primero que configuración tenemos con nmcli. Aquí podemos ver un bond configurado y sobre este dos VLANs levantadas
+Listamos todas las interfaces. Se puede ver que hay dos interfaces de tipo VLAN sobre la interfaz bond0
 ```plaintext
 [root@PRUEBAS01 ~]# nmcli con show | grep bond0
 bond0            4531b0e7-c01a-4183-a7f6-eeb993fac155  bond      bond0
 bond0.100       7ea38a18-16b5-4b69-a246-9ae1a4c12a52  vlan      bond0.100
 bond0.200       7ea38r1d-1l45-4029-as46-9aloa4c12a51  vlan      bond0.200
 ```
-Vamos a comprobar primero que tenemos tráfico de la VLAN 100 para esto lo podemos hacer de dos formas
 
-**Lanzando un TCPDUMP sobre la interfaz bond0. Para esto es necesario especificar la VLAN**
+**Comprobación del VLAN ID 100 sobre la interfaz bond0 que lleva el tráfico taggeado**
 ```plaintext
-[root@PRUEBAS01 ~]# tcpdump -i bond0 -n -e '(vlan 2222)'
+[root@PRUEBAS01 ~]# tcpdump -i bond0 -n -e '(vlan 100)'
 dropped privs to tcpdump
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on bond0, link-type EN10MB (Ethernet), capture size 262144 bytes
@@ -51,7 +47,7 @@ listening on bond0, link-type EN10MB (Ethernet), capture size 262144 bytes
 ```
 0 paquetes capturados. No hay tráfico.
 
-Ahora vamos a consultar si hay tráfico para la VLAN 200. En este caso lo haremos directamente sobre la interfaz de la VLAN. No será necesario especificar la VLAN.
+**Comprobación del VLAN ID 200 sobre la interfaz bond0.200. Aquí no especificamos el VLAN ID ya que el tráfico ya no va taggeado en esta interfaz**
 ```plaintext
 [root@PRUEBAS01 ~]# tcpdump -i bond0.200 -n -e
 dropped privs to tcpdump
@@ -63,7 +59,10 @@ listening on bond0.1654, link-type EN10MB (Ethernet), capture size 262144 bytes
        0x0020:  c460 0404 1600 001c 0504 62e8 fb52 0614  .`........b..R..
        0x0030:  b94a 6ddf 5dae edef 9378 52d8 ccd4 f3a5  .Jm.]....xR.....
 ```	   
-	   
-Aquí sí vemos tráfico capturado.
 
-Con esta evidencia podemos confirmar que hay problemas con la VLAN 100. La VLAN 200 está correctamente pasada.
+## CONCLUSIONES
+
+La VLAN 100 no está bien extendida hasta el servidor, no se vé tráfico por ella.
+La VLAN 200 si parece estar bien pasada, vemos tráfico
+
+Esta prueba es muy interesante ya que la podemos ejecutar sobre la interfaz bond0 (o "ethX, "enoX", etc) antes de configurar la interfaz (configurar ip, netmask, gateway/rutas, etc)
