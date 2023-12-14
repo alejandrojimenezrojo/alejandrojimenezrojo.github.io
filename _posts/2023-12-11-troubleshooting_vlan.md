@@ -15,8 +15,8 @@ published: true
 
 Tenemos un servidor con dos interfaces creadas de tipo VLAN asignadas a un mismo bond (varias tarjetas de red configuradas como si fuesen una sola)
 *Este ejemplo aplica de la misma manera para una interfaz de red simple. Donde pone "bond0" aparecerá como "ethX" o "enoX".
-	VLAN ID 100
- 	VLAN ID 200
+
+VLAN 100 y 200
 
 ## OBJETIVO
 
